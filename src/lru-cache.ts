@@ -18,19 +18,75 @@ type LRUCacheProvider<T> = {
   get: (key: string) => T | undefined
   set: (key: string, value: T) => void
 }
+interface CachItem {
+  value: any,
+  timeout?: ReturnType<typeof setTimeout>
+}
+interface Cache {
+  [key: string]: CachItem
+}
+
 
 // TODO: Implement LRU cache provider
 export function createLRUCacheProvider<T>({
   ttl,
   itemLimit,
 }: LRUCacheProviderOptions): LRUCacheProvider<T> {
+
+  let cache: Cache = {}
+
+  let keyOrder: string[] = []
+
+  function setExpires(key: string) {
+    clearTimeout(cache[key].timeout)
+    cache[key].timeout = setTimeout(() => {
+      delete cache[key]
+    }, ttl)
+  }
+
+  function checkEvict() {
+    let length = Object.keys(cache).length
+    if (length > itemLimit) {
+      let keyToDelete = keyOrder.shift()
+      if (typeof keyToDelete == 'string') {
+        delete cache[keyToDelete]
+      }
+    }
+  }
+
+  function checkLRU(key: string) {
+    let find = keyOrder.findIndex(el => el == key)
+    let newOrder = keyOrder.slice(0, find).concat(keyOrder.slice(find + 1))
+    newOrder.push(key)
+    keyOrder = newOrder
+  }
+
   return {
     has: (key: string) => {
+      if (cache[key]) {
+        setExpires(key)
+        checkLRU(key)
+        return true
+      }
       return false
     },
     get: (key: string) => {
+      if (cache[key]) {
+        setExpires(key)
+        checkLRU(key)
+        return cache[key].value
+      }
       return undefined
     },
-    set: (key: string, value: T) => {},
+    set: (key: string, value: T) => {
+      let item: CachItem = {
+        value: value
+      }
+      cache[key] = item
+      keyOrder.push(key)
+      setExpires(key)
+      checkEvict()
+      checkLRU(key)
+    },
   }
 }

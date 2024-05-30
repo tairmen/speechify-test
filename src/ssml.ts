@@ -14,10 +14,29 @@
 /** Parses SSML to a SSMLNode, throwing on invalid SSML */
 export function parseSSML(ssml: string): SSMLNode {
   // NOTE: Don't forget to run unescapeXMLChars on the SSMLText
+  let firstName = ''
+  let firstAttrs: SSMLAttribute[] = []
+  let tree: SSMLNode[] = []
+
+  for (let i = 0; i < ssml.length; i++) {
+    if (ssml[i] == '<') {
+      let nameWithAttr: string[] = []
+      let tmpStr: string = ''
+      let j = i
+      while (j < ssml.length || ssml[j] != '>') {
+        tmpStr += ssml[j]
+      }
+      j += 1
+      i = j
+    }
+  }
+  if (firstName != 'speak') {
+    throw new Error('missing speak tag')
+  }
   return {
-    name: '',
-    attributes: [],
-    children: [],
+    name: firstName,
+    attributes: firstAttrs,
+    children: tree
   }
 }
 
