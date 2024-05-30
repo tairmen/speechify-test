@@ -82,6 +82,12 @@ export function createLRUCacheProvider<T>({
       let item: CachItem = {
         value: value
       }
+      if (cache[key]) {
+        clearTimeout(cache[key].timeout)
+        let find = keyOrder.findIndex(el => el == key)
+        let newOrder = keyOrder.slice(0, find).concat(keyOrder.slice(find + 1))
+        keyOrder = newOrder
+      }
       cache[key] = item
       keyOrder.push(key)
       setExpires(key)
